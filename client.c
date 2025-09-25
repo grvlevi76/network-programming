@@ -12,11 +12,13 @@
 
 #define PORT "8080"
 #define SERVER_IP "127.0.0.1" //  server's(ur own system) loopback address
-
+#define buff_size 100
 
 int main(){
 
     struct addrinfo inai,*servinfo;
+    char buff[buff_size];
+    int copyied;
     
     memset(&inai, 0, sizeof(inai));
     inai.ai_family = AF_UNSPEC;     //both allowed ipv 4 and 6
@@ -46,16 +48,26 @@ int main(){
         printf("connection failed\n");
         return 1;
     }
-
     printf("Connected successfully!\n");
 
     //sending to server
-    if(send(sockfd,"ssup server",12,0)<0) {
+    printf("enter the message for server : ");
+    fgets(buff,buff_size,stdin);
+    if(send(sockfd,buff,strlen(buff),0)<0) {
         perror("send error : ");
         return 1;
     }else {
         printf("message sent successfully to server\n");
     }
+
+    //recieving from server
+    if((copyied = recv(sockfd,buff,buff_size-1,0))<0) {
+        perror("recv error : ");
+        return 1;
+    }
+
+    buff[copyied] = '\0';
+    printf("response from server : '%s'\n",buff);
 
     freeaddrinfo(servinfo);
     close(sockfd);

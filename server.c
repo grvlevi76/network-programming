@@ -4,17 +4,16 @@
 //2. our program is using ipv6 for connection inside socket , its suppossed to handle both ipv4 and ipv6 incoming connections
 
 //next task->
-//now send anything(response) from server to client
+//make it multi client
 //add a feature to let server keep accepting new connection even after recieving stuff from one client
-// u can  make array with size backlog for total new socket to accept for new connections 
+// u can  make array with size backlog for total new socket to make n accept for new connections 
 //(done)u can just allocate ipv6 socket to port 8080 it will handle both  ipv4 and ipv6
+//(done)now send anything(response) from server to client
 
 //long term goal -> 
 // make it accept request fro http and then respond with html file?
 //can we send and recieve files like images , videos etc 
 //make it like group chat messanger 
-
-
 
 #define _POSIX_C_SOURCE 200112L
 #include <stdio.h>
@@ -33,8 +32,10 @@
 
 int main(){
     struct addrinfo hints , *servinfo, *p;
-    char buff[1024];
-    int sockfd4,sockfd6,new_sockfd, copied;
+    struct sockaddr client_addr;
+    socklen_t addr_size;
+    char buff[buff_size];
+    int sockfd4,sockfd6,client_sockfd, copied;
     memset(&hints,0,sizeof(hints));
 
     hints.ai_family = AF_UNSPEC;
@@ -47,10 +48,10 @@ int main(){
         return 1;
     }
     
-    //socket creation and binding for ipv6
+    //socket creation and binding for ipv6 (cause ipv6 can handle upcoming ipv4 too)
     
     for(p=servinfo;p!=NULL;p=p->ai_next) {
-        if(p->ai_family==10) {
+        if(p->ai_family==AF_INET6) {
 
             /*printf("ip type : %d\n",p->ai_family);  // to check which ip style we got allocated
             printf("lets see : %s\n",p->ai_next);*/
@@ -90,24 +91,34 @@ int main(){
     printf("server : waiting for connection\n");
 
     //providing new socket to connection by  accepting them
-    if((new_sockfd = accept(sockfd6,NULL,NULL))<0) {
+    addr_size = sizeof(client_addr);
+    if((client_sockfd = accept(sockfd6,&client_addr,&addr_size))<0) {
         perror("accept error : ");
         return 1;
     }
 
     //recieving fom client
-    if((copied = recv(new_sockfd,buff,buff_size-1,0))<0) {
+    if((copied = recv(client_sockfd,buff,buff_size-1,0))<0) {
         perror("recv error : ");
         return 1;
     }
 
     buff[copied] ='\0';
-    printf("recieved from client : %s\n",buff);
+    printf("recieved from client : '%s'\n",buff);
+
+    //responding(sending) to server
+    printf("responding to client.....\n");
+    if(send(client_sockfd,"i'm doing good client",22,0)<0) {
+        perror("send error : ");
+        return 1;
+    }else{
+        printf("responded successfully\n");
+    }
     //while(1);
 
 
     freeaddrinfo(servinfo);
-    close(new_sockfd);
+    close(client_sockfd);
     close(sockfd6);
     return 0;
 }
