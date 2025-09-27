@@ -1,4 +1,3 @@
-//whats ai_protocol in soockfd()'s 3rd parameter , what u r supposed to pass their 
 //u haven't specified right error handling, nigga go do it 
 
 #define _POSIX_C_SOURCE 200112L
@@ -16,16 +15,16 @@
 
 int main(){
 
-    struct addrinfo inai,*servinfo;
+    struct addrinfo hints,*servinfo;
     char buff[buff_size];
     int copyied;
     
-    memset(&inai, 0, sizeof(inai));
-    inai.ai_family = AF_UNSPEC;     //both allowed ipv 4 and 6
-    inai.ai_socktype = SOCK_STREAM;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;     //both allowed ipv 4 and 6
+    hints.ai_socktype = SOCK_STREAM;
 
     //to store server address information
-    if(getaddrinfo(SERVER_IP,PORT,&inai,&servinfo)!=0) {       //try localhost in 1st parameter
+    if(getaddrinfo(SERVER_IP,PORT,&hints,&servinfo)!=0) {       //try localhost in 1st parameter
         printf("getaddrinfo error\n");
         return 1;
     } 
@@ -36,7 +35,7 @@ int main(){
     //socket creation
     int sockfd = socket(servinfo->ai_family,servinfo->ai_socktype,servinfo->ai_protocol);
     if (sockfd < 0) {
-        perror("socket creation failed");
+        perror("socket error :");
         return 1;
     }
 
@@ -45,19 +44,21 @@ int main(){
     //connect to server address
     if(connect(sockfd,servinfo->ai_addr,servinfo->ai_addrlen)!=0) {
         close(sockfd);
-        printf("connection failed\n");
+        perror("connecterror :");
         return 1;
     }
-    printf("Connected successfully!\n");
+    printf("Connected successfully to server!\n");
 
     //sending to server
-    printf("enter the message for server : ");
+    printf("\nenter the message for server : ");
     fgets(buff,buff_size,stdin);
+    buff[strcspn(buff, "\n")] = 0;  //removes the new line character which fgets() adds automativally at the end of string
+
     if(send(sockfd,buff,strlen(buff),0)<0) {
         perror("send error : ");
         return 1;
     }else {
-        printf("message sent successfully to server\n");
+        printf("message sent successfully to server!\n");
     }
 
     //recieving from server

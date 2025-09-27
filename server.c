@@ -11,7 +11,7 @@
 //(done)now send anything(response) from server to client
 
 //long term goal -> 
-// make it accept request fro http and then respond with html file?
+// make it accept request for http and then respond with html file?
 //can we send and recieve files like images , videos etc 
 //make it like group chat messanger 
 
@@ -32,7 +32,7 @@
 
 int main(){
     struct addrinfo hints , *servinfo, *p;
-    struct sockaddr client_addr;
+    struct sockaddr_storage client_addr;
     socklen_t addr_size;
     char buff[buff_size];
     int sockfd4,sockfd6,client_sockfd, copied;
@@ -82,40 +82,60 @@ int main(){
     }
 
     //litening to upcoming connection
-    printf("server is listening to port : %s...\n",PORT);
+    printf("\nserver is listening to port : %s...\n",PORT);
     if(listen(sockfd6,BACKLOG)<0) {
         perror("listen error : ");
         return 1;
     }
-
-    printf("server : waiting for connection\n");
-
     //providing new socket to connection by  accepting them
-    addr_size = sizeof(client_addr);
-    if((client_sockfd = accept(sockfd6,&client_addr,&addr_size))<0) {
-        perror("accept error : ");
-        return 1;
+
+    while(1) {
+        printf("\n*****----server : waiting for new client connection-----*****\n");
+
+        //accepting new connection
+        addr_size = sizeof(client_addr);
+        if((client_sockfd = accept(sockfd6,(struct sockaddr *)&client_addr,&addr_size))<0) {
+            perror("accept error : ");
+            continue;
+        }
+
+        //storing clients address
+        struct sockaddr_in *c= (struct sockaddr_in *)&client_addr;
+        char c_ipaddr[50];
+        inet_ntop(c->sin_family,&c->sin_addr,c_ipaddr,sizeof(c_ipaddr));
+        
+        printf("connection accepted for client(%s)\n",c_ipaddr);
+
+        // int a;
+        // while(1) {
+        //     printf("\n a = ");
+        //     scanf("%d",&a);
+        //     if(a ==1) {
+        //         break;
+        //     }
+        // }
+
+        //recieving fom clien -->
+        if((copied = recv(client_sockfd,buff,buff_size-1,0))<0) {
+            perror("recv error : ");
+            continue;
+        }
+
+        buff[copied] ='\0';
+        printf("recieved from client(%s) : '%s'\n",c_ipaddr,buff);
+
+        //responding(sending) to client-->
+        printf("responding back .....\n");
+        strcpy(buff,"i'm doing good client ");
+        strcat(buff,c_ipaddr);
+
+        if(send(client_sockfd,buff,strlen(buff),0)<0) {
+            perror("send error : ");
+            continue;
+        }else{
+            printf("responded successfully\n");
+        }
     }
-
-    //recieving fom client
-    if((copied = recv(client_sockfd,buff,buff_size-1,0))<0) {
-        perror("recv error : ");
-        return 1;
-    }
-
-    buff[copied] ='\0';
-    printf("recieved from client : '%s'\n",buff);
-
-    //responding(sending) to server
-    printf("responding to client.....\n");
-    if(send(client_sockfd,"i'm doing good client",22,0)<0) {
-        perror("send error : ");
-        return 1;
-    }else{
-        printf("responded successfully\n");
-    }
-    //while(1);
-
 
     freeaddrinfo(servinfo);
     close(client_sockfd);
@@ -124,5 +144,7 @@ int main(){
 }
 
 //ques -
+
+//we definitely need to handle the case when client is connected to server but its not sending anything then server will get stuck on recieving forever
 //what goes inside accept()'s 2nd and 3rd parameter 
 //why there's any need of using  getaddrinfo() for server cause server need to listen to all address not specfic
