@@ -109,6 +109,11 @@ int main(){
 
         if(fork()==0) {
             close(sockfd6);     //closes mainfd for child process cause we dont need it in child process
+
+            int a;
+            printf("\n a = ");
+            scanf("%d",&a);
+
             //recieving fom client -->
             if((copied = recv(client_sockfd,buff,buff_size-1,0))<0) {
                 perror("recv error : ");
@@ -128,6 +133,9 @@ int main(){
                 exit(0);
             }
             printf("responded successfully\n");
+
+             printf("\n a = ");
+            scanf("%d",&a);
 
             close(client_sockfd);
             printf("client(%s)'s operation ended\n",c_ipaddr);
